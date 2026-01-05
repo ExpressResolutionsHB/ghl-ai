@@ -17,27 +17,19 @@ app.post("/ghl-ai", async (req, res) => {
       return res.status(400).json({ ok: false, error: "Missing phone or message" });
     }
 
-    const instructions =
-      "You are a real estate acquisitions assistant. Reply by SMS. " +
-      "Max 320 characters. Direct, friendly, no fluff. " +
-      "Goal: get condition + timeline + asking price. Ask ONE question only.";
-
-    const input =
-      `Lead name: ${first_name || "there"}\n` +
-      `Inbound SMS: ${message}\n\n` +
-      `Write the best single-question SMS reply now.`;
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ ok: false, error: "OPENAI_API_KEY missing in Render env" });
+    }
 
     const ai = await client.responses.create({
-      model: "gpt-5", // you can change later
-      instructions,
-      input
+      model: "gpt-4.1-mini",
+      input: `Reply by SMS. Max 320 chars. Ask ONE question only.\n\nLead: ${first_name || "there"}\nInbound: ${message}`
     });
 
     const reply = (ai.output_text || "").trim();
-
     return res.json({ ok: true, reply });
   } catch (e) {
-    console.error(e);
+    console.error("AI ERROR:", e?.message || e);
     return res.status(500).json({ ok: false, error: "AI server error" });
   }
 });
